@@ -386,19 +386,23 @@ describe('saveChatflow', () => {
         expect(mockCreateOrUpdateSchedule).not.toHaveBeenCalled()
     })
 
-    it('does not create a schedule for a non-AGENTFLOW type', async () => {
-        const chatflow = makeChatflow({ type: EnumChatflowType.CHATFLOW, flowData: makePlainFlowData() })
-        mockRepo.save.mockResolvedValue(chatflow)
+    it('rejects creation of CHATFLOW and MULTIAGENT', async () => {
+        for (const type of [EnumChatflowType.CHATFLOW, EnumChatflowType.MULTIAGENT]) {
+            const chatflow = makeChatflow({ type, flowData: makePlainFlowData() })
 
-        await chatflowsService.saveChatflow(
-            chatflow as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+            await expect(
+                chatflowsService.saveChatflow(
+                    chatflow as any,
+                    SAVE_ARGS.orgId,
+                    SAVE_ARGS.workspaceId,
+                    SAVE_ARGS.subscriptionId,
+                    SAVE_ARGS.usageCacheManager
+                )
+            ).rejects.toMatchObject({ statusCode: 400 })
+        }
 
         expect(mockCreateOrUpdateSchedule).not.toHaveBeenCalled()
+        expect(mockRepo.save).not.toHaveBeenCalled()
     })
 
     // ── telemetry ─────────────────────────────────────────────────────────────
@@ -407,7 +411,7 @@ describe('saveChatflow', () => {
         mockRepo.save.mockResolvedValue(makeChatflow({ flowData: makePlainFlowData() }))
 
         await chatflowsService.saveChatflow(
-            makeChatflow({ type: EnumChatflowType.CHATFLOW, flowData: makePlainFlowData() }) as any,
+            makeChatflow({ flowData: makePlainFlowData() }) as any,
             SAVE_ARGS.orgId,
             SAVE_ARGS.workspaceId,
             SAVE_ARGS.subscriptionId,
@@ -582,14 +586,17 @@ describe('updateChatflow', () => {
         expect(beat.onScheduleChanged).not.toHaveBeenCalled()
     })
 
-    it('does not touch schedules for a non-AGENTFLOW type', async () => {
-        const nonAgentFlow = makeChatflow({ type: EnumChatflowType.CHATFLOW, flowData: makePlainFlowData() })
-        mockRepo.merge.mockReturnValue(nonAgentFlow)
-        mockRepo.save.mockResolvedValue(nonAgentFlow)
+    it('rejects updates that set the type to CHATFLOW or MULTIAGENT', async () => {
+        for (const type of [EnumChatflowType.CHATFLOW, EnumChatflowType.MULTIAGENT]) {
+            const nonAgentFlow = makeChatflow({ type, flowData: makePlainFlowData() })
 
-        await chatflowsService.updateChatflow(existingFlow as any, nonAgentFlow as any, 'org-1', 'ws-1', 'sub-1')
+            await expect(
+                chatflowsService.updateChatflow(existingFlow as any, nonAgentFlow as any, 'org-1', 'ws-1', 'sub-1')
+            ).rejects.toMatchObject({ statusCode: 400 })
+        }
 
         expect(mockCreateOrUpdateSchedule).not.toHaveBeenCalled()
         expect(mockDeleteScheduleForTarget).not.toHaveBeenCalled()
+        expect(mockRepo.save).not.toHaveBeenCalled()
     })
 })

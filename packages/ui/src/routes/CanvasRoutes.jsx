@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { Navigate } from 'react-router'
 
 // project imports
 import Loadable from '@/ui-component/loading/Loadable'
@@ -6,8 +7,6 @@ import MinimalLayout from '@/layout/MinimalLayout'
 import { RequireAuth } from '@/routes/RequireAuth'
 
 // canvas routing
-const Canvas = Loadable(lazy(() => import('@/views/canvas')))
-const MarketplaceCanvas = Loadable(lazy(() => import('@/views/marketplaces/MarketplaceCanvas')))
 const CanvasV2 = Loadable(lazy(() => import('@/views/agentflowsv2/Canvas')))
 const MarketplaceCanvasV2 = Loadable(lazy(() => import('@/views/agentflowsv2/MarketplaceCanvas')))
 
@@ -19,35 +18,19 @@ const CanvasRoutes = {
     children: [
         {
             path: '/canvas',
-            element: (
-                <RequireAuth permission={'chatflows:view'}>
-                    <Canvas />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/canvas/:id',
-            element: (
-                <RequireAuth permission={'chatflows:view'}>
-                    <Canvas />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/agentcanvas',
-            element: (
-                <RequireAuth permission={'agentflows:view'}>
-                    <Canvas />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/agentcanvas/:id',
-            element: (
-                <RequireAuth permission={'agentflows:view'}>
-                    <Canvas />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/v2/agentcanvas',
@@ -67,11 +50,7 @@ const CanvasRoutes = {
         },
         {
             path: '/marketplace/:id',
-            element: (
-                <RequireAuth permission={'templates:marketplace,templates:custom'}>
-                    <MarketplaceCanvas />
-                </RequireAuth>
-            )
+            element: <Navigate to='/marketplaces' replace />
         },
         {
             path: '/v2/marketplace/:id',

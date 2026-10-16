@@ -44,9 +44,19 @@ export const enum ChatflowErrorMessage {
     WORKSPACE_ID_REQUIRED = 'Workspace ID is required'
 }
 
+const removedFlowTypes = new Set<string>([EnumChatflowType.CHATFLOW, EnumChatflowType.MULTIAGENT])
+
 export function validateChatflowType(type: ChatflowType | undefined) {
     if (!Object.values(EnumChatflowType).includes(type as EnumChatflowType))
         throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, ChatflowErrorMessage.INVALID_CHATFLOW_TYPE)
+}
+
+/** Reject Chatflow builder and Agentflow V1 rows. Agentflow V2 (AGENTFLOW) and existing assistant rows stay valid. */
+export function assertCreatableChatflowType(type: ChatflowType | undefined) {
+    validateChatflowType(type)
+    if (removedFlowTypes.has(type as string)) {
+        throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, 'Chatflow and Agentflow V1 cannot be created. Use type AGENTFLOW.')
+    }
 }
 
 // Check if chatflow valid for streaming
@@ -362,7 +372,7 @@ const saveChatflow = async (
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
 ): Promise<any> => {
-    validateChatflowType(newChatFlow.type)
+    assertCreatableChatflowType(newChatFlow.type)
     const appServer = getRunningExpressApp()
 
     let dbResponse: ChatFlow
@@ -481,7 +491,7 @@ const updateChatflow = async (
         )
     }
     if (updateChatFlow.type || updateChatFlow.type === '') {
-        validateChatflowType(updateChatFlow.type)
+        assertCreatableChatflowType(updateChatFlow.type)
     } else {
         updateChatFlow.type = chatflow.type
     }

@@ -21,8 +21,7 @@ import {
     Switch,
     StepLabel,
     IconButton,
-    FormControlLabel,
-    Checkbox
+    FormControlLabel
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -43,7 +42,6 @@ import useApi from '@/hooks/useApi'
 import datasetsApi from '@/api/dataset'
 import evaluatorsApi from '@/api/evaluators'
 import nodesApi from '@/api/nodes'
-import assistantsApi from '@/api/assistants'
 
 // utils
 import useNotifier from '@/utils/useNotifier'
@@ -58,14 +56,12 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     const theme = useTheme()
     useNotifier()
 
-    const getAllChatflowsApi = useApi(chatflowsApi.getAllChatflows)
     const getAllAgentflowsApi = useApi(chatflowsApi.getAllAgentflows)
 
     const getAllDatasetsApi = useApi(datasetsApi.getAllDatasets)
     const getAllEvaluatorsApi = useApi(evaluatorsApi.getAllEvaluators)
     const getNodesByCategoryApi = useApi(nodesApi.getNodesByCategory)
     const getModelsApi = useApi(nodesApi.executeNodeLoadMethod)
-    const getAssistantsApi = useApi(assistantsApi.getAllAssistants)
 
     const [chatflow, setChatflow] = useState([])
     const [dataset, setDataset] = useState('')
@@ -226,8 +222,6 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     useEffect(() => {
         getNodesByCategoryApi.request('Chat Models')
         if (flows.length === 0) {
-            getAllChatflowsApi.request()
-            getAssistantsApi.request('CUSTOM')
             getAllAgentflowsApi.request('AGENTFLOW')
         }
         if (datasets.length === 0) {
@@ -238,18 +232,16 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     }, [])
 
     useEffect(() => {
-        if (getAllAgentflowsApi.data && getAllChatflowsApi.data && getAssistantsApi.data) {
+        if (getAllAgentflowsApi.data) {
             try {
-                const agentFlows = populateFlowNames(getAllAgentflowsApi.data, 'Agentflow v2')
-                const chatFlows = populateFlowNames(getAllChatflowsApi.data, 'Chatflow')
-                const assistants = populateAssistants(getAssistantsApi.data)
-                setFlows([...agentFlows, ...chatFlows, ...assistants])
-                setFlowTypes(['Agentflow v2', 'Chatflow', 'Custom Assistant'])
+                const rows = Array.isArray(getAllAgentflowsApi.data) ? getAllAgentflowsApi.data : getAllAgentflowsApi.data.data || []
+                setFlows(populateFlowNames(rows, 'Agentflow v2'))
+                setFlowTypes(['Agentflow v2'])
             } catch (e) {
                 console.error(e)
             }
         }
-    }, [getAllAgentflowsApi.data, getAllChatflowsApi.data, getAssistantsApi.data])
+    }, [getAllAgentflowsApi.data])
 
     useEffect(() => {
         if (getNodesByCategoryApi.data) {
@@ -345,16 +337,6 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
         if (llm !== 'no_grading') getModelsApi.request(llm, { loadMethod: 'listModels' })
     }
 
-    const onChangeFlowType = (flowType) => {
-        const selected = flowType.target.checked
-        const flowTypeValue = flowType.target.value
-        if (selected) {
-            setFlowTypes([...flowTypes, flowTypeValue])
-        } else {
-            setFlowTypes(flowTypes.filter((f) => f !== flowTypeValue))
-        }
-    }
-
     const populateFlowNames = (data, type) => {
         let flowNames = []
         for (let i = 0; i < data.length; i += 1) {
@@ -367,20 +349,6 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
             })
         }
         return flowNames
-    }
-
-    const populateAssistants = (assistants) => {
-        let assistantNames = []
-        for (let i = 0; i < assistants.length; i += 1) {
-            const assistant = assistants[i]
-            assistantNames.push({
-                label: JSON.parse(assistant.details).name || '',
-                name: assistant.id,
-                type: 'Custom Assistant',
-                description: 'Custom Assistant'
-            })
-        }
-        return assistantNames
     }
 
     const component = show ? (
@@ -442,7 +410,7 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                 </Typography>
                                 <Typography sx={{ mt: 2 }} variant='body2'>
                                     Uses the <span style={{ fontStyle: 'italic' }}>input</span> column from the dataset to execute selected
-                                    Chatflow(s), and compares the results with the output column.
+                                    Agentflow(s), and compares the results with the output column.
                                 </Typography>
                                 <Typography variant='body2'>The following metrics will be computed:</Typography>
                                 <Stack
@@ -533,26 +501,6 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                     <Typography variant='overline'>
                                         Select your flows to Evaluate
                                         <span style={{ color: 'red' }}>&nbsp;*</span>
-                                    </Typography>
-                                    <Typography variant='overline'>
-                                        <Checkbox defaultChecked size='small' label='All' value='Chatflow' onChange={onChangeFlowType} />{' '}
-                                        Chatflows
-                                        <Checkbox
-                                            defaultChecked
-                                            size='small'
-                                            label='All'
-                                            value='Agentflow v2'
-                                            onChange={onChangeFlowType}
-                                        />{' '}
-                                        Agentflows (v2)
-                                        <Checkbox
-                                            defaultChecked
-                                            size='small'
-                                            label='All'
-                                            value='Custom Assistant'
-                                            onChange={onChangeFlowType}
-                                        />{' '}
-                                        Custom Assistants
                                     </Typography>
                                 </div>
                                 <MultiDropdown

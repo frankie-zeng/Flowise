@@ -29,30 +29,10 @@ const getCategories = (fileDataObj: ITemplate) => {
 // Get all templates for marketplaces
 const getAllTemplates = async () => {
     try {
-        let marketplaceDir = path.join(__dirname, '..', '..', '..', 'marketplaces', 'chatflows')
+        const templates: any[] = []
+
+        let marketplaceDir = path.join(__dirname, '..', '..', '..', 'marketplaces', 'tools')
         let jsonsInDir = fs.readdirSync(marketplaceDir).filter((file) => path.extname(file) === '.json')
-        let templates: any[] = []
-        jsonsInDir.forEach((file) => {
-            const filePath = path.join(__dirname, '..', '..', '..', 'marketplaces', 'chatflows', file)
-            const fileData = fs.readFileSync(filePath)
-            const fileDataObj = JSON.parse(fileData.toString()) as ITemplate
-
-            const template = {
-                id: uuidv4(),
-                templateName: file.split('.json')[0],
-                flowData: fileData.toString(),
-                badge: fileDataObj?.badge,
-                framework: fileDataObj?.framework,
-                usecases: fileDataObj?.usecases,
-                categories: getCategories(fileDataObj),
-                type: 'Chatflow',
-                description: fileDataObj?.description || ''
-            }
-            templates.push(template)
-        })
-
-        marketplaceDir = path.join(__dirname, '..', '..', '..', 'marketplaces', 'tools')
-        jsonsInDir = fs.readdirSync(marketplaceDir).filter((file) => path.extname(file) === '.json')
         jsonsInDir.forEach((file) => {
             const filePath = path.join(__dirname, '..', '..', '..', 'marketplaces', 'tools', file)
             const fileData = fs.readFileSync(filePath)
@@ -176,7 +156,9 @@ const _modifyTemplates = (templates: any[]) => {
 const getAllCustomTemplates = async (workspaceId?: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
-        const templates: any[] = await appServer.AppDataSource.getRepository(CustomTemplate).findBy(getWorkspaceSearchOptions(workspaceId))
+        const templates: any[] = (
+            await appServer.AppDataSource.getRepository(CustomTemplate).findBy(getWorkspaceSearchOptions(workspaceId))
+        ).filter((template) => template.type !== 'Chatflow' && template.type !== 'Agentflow')
         const dbResponse = []
         _modifyTemplates(templates)
         dbResponse.push(...templates)
@@ -184,10 +166,13 @@ const getAllCustomTemplates = async (workspaceId?: string): Promise<any> => {
         if (workspaceId) {
             const workspaceService = new WorkspaceService()
             const sharedItems = (await workspaceService.getSharedItemsForWorkspace(workspaceId, 'custom_template')) as CustomTemplate[]
-            if (sharedItems && sharedItems.length) {
-                _modifyTemplates(sharedItems)
+            const visibleSharedItems = (sharedItems || []).filter(
+                (template) => template.type !== 'Chatflow' && template.type !== 'Agentflow'
+            )
+            if (visibleSharedItems.length) {
+                _modifyTemplates(visibleSharedItems)
                 // add shared = true flag to all shared items, to differentiate them in the UI
-                sharedItems.forEach((sharedItem) => {
+                visibleSharedItems.forEach((sharedItem) => {
                     // @ts-ignore
                     sharedItem.shared = true
                     dbResponse.push(sharedItem)
@@ -214,6 +199,12 @@ const saveCustomTemplate = async (body: any): Promise<any> => {
 
         if (body.chatflowId) {
             const chatflow = await chatflowsService.getChatflowById(body.chatflowId, body.workspaceId)
+            if (chatflow.type === 'CHATFLOW' || chatflow.type === 'MULTIAGENT') {
+                throw new InternalFlowiseError(
+                    StatusCodes.BAD_REQUEST,
+                    'Chatflow and Agentflow V1 templates are not supported. Save an Agentflow template instead.'
+                )
+            }
             const flowData = JSON.parse(chatflow.flowData)
             const { framework, exportJson } = _generateExportFlowData(flowData)
             flowDataStr = JSON.stringify(exportJson)
@@ -237,6 +228,7 @@ const saveCustomTemplate = async (body: any): Promise<any> => {
         const flowTemplate = await appServer.AppDataSource.getRepository(CustomTemplate).save(entity)
         return flowTemplate
     } catch (error) {
+        if (error instanceof InternalFlowiseError) throw error
         throw new InternalFlowiseError(
             StatusCodes.INTERNAL_SERVER_ERROR,
             `Error: marketplacesService.saveCustomTemplate - ${getErrorMessage(error)}`

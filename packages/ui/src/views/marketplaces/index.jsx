@@ -61,7 +61,7 @@ import { gridSpacing } from '@/store/constant'
 import { useError } from '@/store/context/ErrorContext'
 
 const badges = ['POPULAR', 'NEW']
-const types = ['Chatflow', 'AgentflowV2', 'Tool']
+const types = ['AgentflowV2', 'Tool']
 const framework = ['Langchain', 'LlamaIndex']
 const MenuProps = {
     PaperProps: {
@@ -276,6 +276,7 @@ const Marketplace = () => {
     }
 
     function filterByType(data) {
+        if (!types.includes(data.type)) return false
         return typeFilter.length > 0 ? typeFilter.includes(data.type) : true
     }
 
@@ -295,7 +296,7 @@ const Marketplace = () => {
     const getEligibleUsecases = (data, filter) => {
         if (!data) return
 
-        let filteredData = data
+        let filteredData = data.filter((item) => types.includes(item.type))
         if (filter.badgeFilter.length > 0) filteredData = filteredData.filter((data) => filter.badgeFilter.includes(data.badge))
         if (filter.typeFilter.length > 0) filteredData = filteredData.filter((data) => filter.typeFilter.includes(data.type))
         if (filter.frameworkFilter.length > 0)
@@ -342,11 +343,8 @@ const Marketplace = () => {
     }
 
     const goToCanvas = (selectedChatflow) => {
-        if (selectedChatflow.type === 'AgentflowV2') {
-            navigate(`/v2/marketplace/${selectedChatflow.id}`, { state: selectedChatflow })
-        } else {
-            navigate(`/marketplace/${selectedChatflow.id}`, { state: selectedChatflow })
-        }
+        if (selectedChatflow.type !== 'AgentflowV2') return
+        navigate(`/v2/marketplace/${selectedChatflow.id}`, { state: selectedChatflow })
     }
 
     useEffect(() => {
@@ -735,9 +733,7 @@ const Marketplace = () => {
                                                                     badgeContent={data.badge}
                                                                     color={data.badge === 'POPULAR' ? 'primary' : 'error'}
                                                                 >
-                                                                    {(data.type === 'Chatflow' ||
-                                                                        data.type === 'Agentflow' ||
-                                                                        data.type === 'AgentflowV2') && (
+                                                                    {data.type === 'AgentflowV2' && (
                                                                         <ItemCard
                                                                             onClick={() => goToCanvas(data)}
                                                                             data={data}
@@ -750,17 +746,14 @@ const Marketplace = () => {
                                                                     )}
                                                                 </Badge>
                                                             )}
-                                                            {!data.badge &&
-                                                                (data.type === 'Chatflow' ||
-                                                                    data.type === 'Agentflow' ||
-                                                                    data.type === 'AgentflowV2') && (
-                                                                    <ItemCard
-                                                                        onClick={() => goToCanvas(data)}
-                                                                        data={data}
-                                                                        images={images[data.id]}
-                                                                        icons={icons[data.id]}
-                                                                    />
-                                                                )}
+                                                            {!data.badge && data.type === 'AgentflowV2' && (
+                                                                <ItemCard
+                                                                    onClick={() => goToCanvas(data)}
+                                                                    data={data}
+                                                                    images={images[data.id]}
+                                                                    icons={icons[data.id]}
+                                                                />
+                                                            )}
                                                             {!data.badge && data.type === 'Tool' && (
                                                                 <ItemCard data={data} onClick={() => goToTool(data)} />
                                                             )}
@@ -868,9 +861,7 @@ const Marketplace = () => {
                                                                     badgeContent={data.badge}
                                                                     color={data.badge === 'POPULAR' ? 'primary' : 'error'}
                                                                 >
-                                                                    {(data.type === 'Chatflow' ||
-                                                                        data.type === 'Agentflow' ||
-                                                                        data.type === 'AgentflowV2') && (
+                                                                    {data.type === 'AgentflowV2' && (
                                                                         <ItemCard
                                                                             onClick={() => goToCanvas(data)}
                                                                             data={data}
@@ -883,17 +874,14 @@ const Marketplace = () => {
                                                                     )}
                                                                 </Badge>
                                                             )}
-                                                            {!data.badge &&
-                                                                (data.type === 'Chatflow' ||
-                                                                    data.type === 'Agentflow' ||
-                                                                    data.type === 'AgentflowV2') && (
-                                                                    <ItemCard
-                                                                        onClick={() => goToCanvas(data)}
-                                                                        data={data}
-                                                                        images={templateImages[data.id]}
-                                                                        icons={templateIcons[data.id]}
-                                                                    />
-                                                                )}
+                                                            {!data.badge && data.type === 'AgentflowV2' && (
+                                                                <ItemCard
+                                                                    onClick={() => goToCanvas(data)}
+                                                                    data={data}
+                                                                    images={templateImages[data.id]}
+                                                                    icons={templateIcons[data.id]}
+                                                                />
+                                                            )}
                                                             {!data.badge && data.type === 'Tool' && (
                                                                 <ItemCard data={data} onClick={() => goToTool(data)} />
                                                             )}

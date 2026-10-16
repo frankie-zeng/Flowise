@@ -15,8 +15,7 @@ import {
     IconWorld,
     IconRelationOneToManyFilled,
     IconVectorBezier2,
-    IconPlugConnected,
-    IconTournament
+    IconPlugConnected
 } from '@tabler/icons-react'
 
 export const gridSpacing = 3
@@ -119,11 +118,6 @@ export const AGENTFLOW_ICONS = [
         name: 'a2aAgentflow',
         icon: IconPlugConnected,
         color: '#FF8A65'
-    },
-    {
-        name: 'patternAgentflow',
-        icon: IconTournament,
-        color: '#B39DDB'
     }
 ]
 

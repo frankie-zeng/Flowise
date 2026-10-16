@@ -2,12 +2,10 @@
 import {
     IconList,
     IconUsersGroup,
-    IconHierarchy,
     IconBuildingStore,
     IconKey,
     IconTool,
     IconLock,
-    IconRobot,
     IconSettings,
     IconVariable,
     IconFiles,
@@ -28,14 +26,12 @@ import {
 
 // constant
 const icons = {
-    IconHierarchy,
     IconUsersGroup,
     IconBuildingStore,
     IconList,
     IconKey,
     IconTool,
     IconLock,
-    IconRobot,
     IconSettings,
     IconVariable,
     IconFiles,
@@ -67,15 +63,6 @@ const dashboard = {
             type: 'group',
             children: [
                 {
-                    id: 'chatflows',
-                    title: 'Chatflows',
-                    type: 'item',
-                    url: '/chatflows',
-                    icon: icons.IconHierarchy,
-                    breadcrumbs: true,
-                    permission: 'chatflows:view'
-                },
-                {
                     id: 'agentflows',
                     title: 'Agentflows',
                     type: 'item',
@@ -92,15 +79,6 @@ const dashboard = {
                     icon: icons.IconListCheck,
                     breadcrumbs: true,
                     permission: 'executions:view'
-                },
-                {
-                    id: 'assistants',
-                    title: 'Assistants',
-                    type: 'item',
-                    url: '/assistants',
-                    icon: icons.IconRobot,
-                    breadcrumbs: true,
-                    permission: 'assistants:view'
                 },
                 {
                     id: 'marketplaces',

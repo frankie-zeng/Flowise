@@ -1,6 +1,6 @@
 # Agentflow extensions
 
-These additions sit on Agentflow V2 and stay off until the matching environment variables are set. Existing chatflows, agentflows, and logins behave as before when the variables are unset.
+These additions sit on Agentflow V2 and stay off until the matching environment variables are set. The product UI is Agentflow V2. The Chatflow builder, Agentflow V1, and Assistants are not in the sidebar or routes, and the API rejects new rows of type `CHATFLOW` or `MULTIAGENT`. Agentflows stay in the shared `chat_flow` table with type `AGENTFLOW`. Existing agentflows and logins behave as before when the variables are unset.
 
 The private prototype at `frankie-zeng/agent-workflow` was not readable from this environment. The behavior below follows that brief and Flowise's own execution, storage, and workspace model.
 
@@ -88,16 +88,13 @@ The Human Input node has a **Mode** field:
 
 Flows saved before this field keep approve/reject.
 
+Critic, debate, best-of-N, and reflexion are composed with the built-in LLM, Agent, Condition, Loop, and Iteration nodes. There is no separate Pattern node.
+
 ## A2A node
 
 The **A2A** node POSTs JSON-RPC `message/send` to the agent URL. `contextId` and `taskId` are saved in `a2a_session` for the chatflow, session, and node, and also copied into flow state under `a2a.<nodeId>`. The request and response are on the node output and, when artifacts are enabled, in storage.
-
-## Pattern node
-
-The **Pattern** node runs one chat model through critic, debate, best of N, or reflexion. The transcript is on the node output. This is a single-model implementation of those patterns, not a separate agent for each role.
 
 ## What is not automatic
 
 -   Sandboxes are not created for flows that have never been run.
 -   `AUTH_BYPASS` and Casdoor do not disable API keys on prediction routes that were already public.
--   Pattern steps are sequential calls to the selected chat model. They do not spawn extra sandboxes.
