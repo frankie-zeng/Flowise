@@ -12,7 +12,12 @@ import {
     IServerSideEventStreamer,
     convertChatHistoryToText,
     generateFollowUpPrompts,
-    tracingEnvEnabled
+    tracingEnvEnabled,
+    buildHumanInputActionSpec,
+    normalizeHumanInputMode,
+    getWorkflowSandboxContext,
+    isWorkflowSandboxEnabled,
+    runWithWorkflowSandbox
 } from 'flowise-components'
 import {
     IncomingAgentflowInput,
@@ -33,6 +38,9 @@ import {
     INodeDirectedGraph,
     StartInputType
 } from '../Interface'
+import { acquireWorkflowSandbox } from '../services/workflow-sandbox'
+import { persistNodeExecutionArtifacts } from '../services/execution-artifacts'
+import { createA2ASessionStore } from '../services/a2a-session'
 import {
     RUNTIME_MESSAGES_LENGTH_VAR_PREFIX,
     CHAT_HISTORY_VAR_PREFIX,
@@ -165,6 +173,7 @@ interface IExecuteNodeParams {
     workspaceId: string
     subscriptionId: string
     productId: string
+    executionId?: string
 }
 
 interface IExecuteAgentFlowParams extends Omit<IExecuteFlowParams, 'incomingInput'> {
@@ -1090,7 +1099,8 @@ const executeNode = async ({
     orgId,
     workspaceId,
     subscriptionId,
-    productId
+    productId,
+    executionId
 }: IExecuteNodeParams): Promise<{
     result: any
     shouldStop?: boolean
@@ -1252,11 +1262,32 @@ const executeNode = async ({
             parentTraceIds,
             humanInputAction,
             iterationContext,
-            evaluationRunId
+            evaluationRunId,
+            a2aSession: createA2ASessionStore(appDataSource, chatflow.id, sessionId)
         }
 
         // Execute node
         let results = await newNodeInstance.run(reactFlowNodeData, finalInput, runParams)
+
+        if (results && typeof results === 'object' && executionId) {
+            try {
+                const artifacts = await persistNodeExecutionArtifacts({
+                    appDataSource,
+                    orgId,
+                    workspaceId,
+                    chatflowId: chatflow.id,
+                    executionId,
+                    sessionId,
+                    nodeId,
+                    nodeLabel: reactFlowNode.data.label,
+                    input: results.input,
+                    output: results.output
+                })
+                if (artifacts.length) results.artifacts = artifacts
+            } catch (artifactError) {
+                logger.error(`[artifacts] ${getErrorMessage(artifactError)}`)
+            }
+        }
 
         // Handle iteration node with recursive execution
         if (
@@ -1407,20 +1438,17 @@ const executeNode = async ({
 
         // Stop going through the current route if the node is a human task
         if (!humanInput && reactFlowNode.data.name === 'humanInputAgentflow') {
+            const humanInputMode = normalizeHumanInputMode(results?.output?.humanInputMode || reactFlowNode.data?.inputs?.humanInputMode)
+            const actionSpec = buildHumanInputActionSpec(humanInputMode)
             const humanInputAction = {
                 id: uuidv4(),
-                mapping: {
-                    approve: 'Proceed',
-                    reject: 'Reject'
-                },
-                elements: [
-                    { type: 'agentflowv2-approve-button', label: 'Proceed' },
-                    { type: 'agentflowv2-reject-button', label: 'Reject' }
-                ],
+                mapping: actionSpec.mapping,
+                elements: actionSpec.elements,
                 data: {
                     nodeId,
                     nodeLabel: reactFlowNode.data.label,
-                    input: results.input
+                    input: results.input,
+                    humanInputMode
                 }
             }
 
@@ -1538,7 +1566,26 @@ const parseFormStringToJson = (formString: string): Record<string, string> => {
 /*
  * Function to traverse the flow graph and execute the nodes
  */
-export const executeAgentFlow = async ({
+export const executeAgentFlow = async (params: IExecuteAgentFlowParams): Promise<any> => {
+    if (isWorkflowSandboxEnabled()) {
+        const current = getWorkflowSandboxContext()
+        if (!current || current.chatflowId !== params.chatflow.id) {
+            try {
+                const sandboxContext = await acquireWorkflowSandbox(params.chatflow.id)
+                return runWithWorkflowSandbox(sandboxContext, () => executeAgentFlow(params))
+            } catch (sandboxError) {
+                const message = getErrorMessage(sandboxError)
+                logger.error(`[sandbox] ${message}`)
+                return runWithWorkflowSandbox({ mode: 'unavailable', chatflowId: params.chatflow.id, error: message }, () =>
+                    executeAgentFlow(params)
+                )
+            }
+        }
+    }
+    return executeAgentFlowInner(params)
+}
+
+const executeAgentFlowInner = async ({
     componentNodes,
     incomingInput,
     chatflow,
@@ -2087,7 +2134,8 @@ export const executeAgentFlow = async ({
                 orgId,
                 workspaceId,
                 subscriptionId,
-                productId
+                productId,
+                executionId: newExecution.id
             })
 
             if (executionResult.agentFlowExecutedData) {

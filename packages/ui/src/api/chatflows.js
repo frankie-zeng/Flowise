@@ -34,6 +34,10 @@ const getScheduleTriggerLogs = (id, params) => client.get(`/chatflows/${id}/sche
 
 const deleteScheduleTriggerLogs = (id, logIds) => client.delete(`/chatflows/${id}/schedule/trigger-logs`, { data: { logIds } })
 
+const getWorkflowSandbox = (id) => client.get(`/chatflows/${id}/sandbox`)
+
+const releaseWorkflowSandbox = (id) => client.post(`/chatflows/${id}/sandbox/release`)
+
 export default {
     getAllChatflows,
     getAllAgentflows,
@@ -51,5 +55,7 @@ export default {
     getScheduleStatus,
     toggleScheduleEnabled,
     getScheduleTriggerLogs,
-    deleteScheduleTriggerLogs
+    deleteScheduleTriggerLogs,
+    getWorkflowSandbox,
+    releaseWorkflowSandbox
 }

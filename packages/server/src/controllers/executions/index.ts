@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
+import { StatusCodes } from 'http-status-codes'
 import executionsService from '../../services/executions'
 import { ExecutionState } from '../../Interface'
+import { readExecutionArtifact } from '../../services/execution-artifacts'
+import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 
 const getExecutionById = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -112,10 +115,26 @@ const deleteExecutions = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
+const getExecutionArtifact = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const artifact = await readExecutionArtifact(
+            getRunningExpressApp().AppDataSource,
+            req.params.id,
+            req.params.artifactId,
+            req.user?.activeWorkspaceId
+        )
+        if (!artifact) return res.status(StatusCodes.NOT_FOUND).json({ message: 'Artifact not found' })
+        return res.json(artifact)
+    } catch (error) {
+        next(error)
+    }
+}
+
 export default {
     getAllExecutions,
     deleteExecutions,
     getExecutionById,
     getPublicExecutionById,
+    getExecutionArtifact,
     updateExecution
 }

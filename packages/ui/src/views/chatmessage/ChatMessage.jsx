@@ -894,7 +894,7 @@ const ChatMessage = ({ open, chatflowid, isAgentCanvas, isDialog, previews, setP
             return allMessages
         })
         if (elem.type.includes('agentflowv2')) {
-            const type = elem.type.includes('approve') ? 'proceed' : 'reject'
+            const type = elem.type.includes('reject') ? 'reject' : 'proceed'
             setFeedbackType(type)
 
             if (action.data && action.data.input && action.data.input.humanInputEnableFeedback) {
@@ -3208,7 +3208,9 @@ const ChatMessage = ({ open, chatflowid, isAgentCanvas, isDialog, previews, setP
                     setFeedback('')
                 }}
             >
-                <DialogTitle variant='h5'>Provide Feedback</DialogTitle>
+                <DialogTitle variant='h5'>
+                    {pendingActionData?.humanInputMode === 'input' ? '请输入 / Input' : 'Provide Feedback'}
+                </DialogTitle>
                 <DialogContent>
                     <TextField
                         // eslint-disable-next-line

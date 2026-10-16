@@ -62,4 +62,15 @@ router.delete(
     chatflowsController.deleteScheduleTriggerLogs
 )
 
+router.get(
+    '/:id/sandbox',
+    checkAnyPermission('chatflows:view,chatflows:update,agentflows:view,agentflows:update'),
+    chatflowsController.getWorkflowSandbox
+)
+router.post(
+    '/:id/sandbox/release',
+    checkAnyPermission('chatflows:update,chatflows:delete,agentflows:update,agentflows:delete'),
+    chatflowsController.releaseWorkflowSandbox
+)
+
 export default router

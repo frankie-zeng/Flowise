@@ -28,6 +28,7 @@ English | [繁體中文](./i18n/README-TW.md) | [简体中文](./i18n/README-ZH.
 -   [⚡ Quick Start](#-quick-start)
 -   [🐳 Docker](#-docker)
 -   [👨‍💻 Developers](#-developers)
+-   [Agentflow extensions](./docs/agentflow-extensions.md)
 -   [🌱 Env Variables](#-env-variables)
 -   [📖 Documentation](#-documentation)
 -   [🌐 Self Host](#-self-host)
@@ -124,6 +125,8 @@ Flowise has 3 different modules in a single mono repository.
     ```bash
     pnpm build
     ```
+
+    Fork-specific Agentflow sandbox, Casdoor login, artifacts, and human-input modes are documented in [Agentflow extensions](./docs/agentflow-extensions.md). For local UI work without Casdoor, set `AUTH_BYPASS=1` in `packages/server/.env` and do not commit that file.
 
     <details>
     <summary>Exit code 134 (JavaScript heap out of memory)</summary>  

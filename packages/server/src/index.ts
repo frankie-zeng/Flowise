@@ -302,6 +302,8 @@ export class App {
 
         // this is for SSO and must be after the JWT cookie middleware
         await this.identityManager.initializeSSO(this.app)
+        const { initializeCasdoorAuth } = await import('./services/identity/casdoor')
+        initializeCasdoorAuth(this.app)
 
         if (process.env.ENABLE_METRICS === 'true') {
             switch (process.env.METRICS_PROVIDER) {

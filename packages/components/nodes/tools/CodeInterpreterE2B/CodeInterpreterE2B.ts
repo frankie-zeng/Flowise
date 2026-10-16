@@ -2,6 +2,8 @@ import { ICommonObject, INode, INodeData, INodeParams } from '../../../src/Inter
 import { getBaseClasses, getCredentialData, getCredentialParam, parseWithTypeConversion } from '../../../src/utils'
 import { StructuredTool, ToolInputParsingException, ToolParams } from '@langchain/core/tools'
 import { Sandbox } from '@e2b/code-interpreter'
+import { getE2BConnectionConfig, toE2BCreateOptions } from '../../../src/sandbox/e2bConfig'
+import { getWorkflowSandboxContext } from '../../../src/sandbox/workflowSandboxContext'
 import { z } from 'zod/v3'
 import { addSingleFileToStorage } from '../../../src/storageUtils'
 import { CallbackManager, CallbackManagerForToolRun, Callbacks, parseCallbackConfigArg } from '@langchain/core/callbacks/manager'
@@ -202,9 +204,19 @@ export class E2BTool extends StructuredTool {
         flowConfig?: { sessionId?: string; chatId?: string; input?: string }
     ): Promise<string> {
         flowConfig = { ...this.flowObj, ...flowConfig }
+        const workflowSandbox = getWorkflowSandboxContext()
+        const sharedSandbox = workflowSandbox?.mode === 'ready' ? workflowSandbox.sandbox : undefined
         try {
             if ('input' in arg) {
-                this.instance = await Sandbox.create({ apiKey: this.apiKey })
+                if (sharedSandbox) {
+                    this.instance = sharedSandbox
+                } else {
+                    const connection = getE2BConnectionConfig()
+                    const createOptions = { ...toE2BCreateOptions(connection), apiKey: this.apiKey || connection.apiKey }
+                    this.instance = connection.template
+                        ? await Sandbox.create(connection.template, createOptions)
+                        : await Sandbox.create(createOptions)
+                }
                 const execution = await this.instance.runCode(arg?.input, { language: 'python' })
 
                 const artifacts = []
@@ -265,7 +277,7 @@ export class E2BTool extends StructuredTool {
                 return 'No input provided'
             }
         } catch (e) {
-            if (this.instance) this.instance.kill()
+            if (!sharedSandbox && this.instance) this.instance.kill()
             return typeof e === 'string' ? e : JSON.stringify(e, null, 2)
         }
     }

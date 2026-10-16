@@ -18,6 +18,9 @@ import { getErrorMessage } from '../../errors/utils'
 import { ScheduleBeat } from '../../schedule/ScheduleBeat'
 import documentStoreService from '../../services/documentstore'
 import scheduleService from '../../services/schedule'
+import { releaseWorkflowSandboxForChatflow } from '../workflow-sandbox'
+import { A2ASession } from '../../database/entities/A2ASession'
+import { ExecutionArtifact } from '../../database/entities/ExecutionArtifact'
 import {
     constructGraphs,
     decryptCredentialData,
@@ -152,6 +155,14 @@ const deleteChatflow = async (
             if (existingRecord) {
                 await ScheduleBeat.getInstance().onScheduleChanged(existingRecord.id, 'delete')
             }
+        }
+
+        try {
+            await releaseWorkflowSandboxForChatflow(chatflowId)
+            await appServer.AppDataSource.getRepository(A2ASession).delete({ chatflowId })
+            await appServer.AppDataSource.getRepository(ExecutionArtifact).delete({ agentflowId: chatflowId })
+        } catch (e) {
+            logger.error(`[server]: Error releasing workflow sandbox for chatflow ${chatflowId}: ${getErrorMessage(e)}`)
         }
 
         try {

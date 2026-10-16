@@ -32,13 +32,25 @@ class HumanInput_Agentflow implements INode {
     constructor() {
         this.label = 'Human Input'
         this.name = 'humanInputAgentflow'
-        this.version = 1.0
+        this.version = 1.1
         this.type = 'HumanInput'
         this.category = 'Agent Flows'
-        this.description = 'Request human input, approval or rejection during execution'
+        this.description = 'Pause for human input, approval, or acknowledgement. 暂停以等待输入、审批或确认。'
         this.color = '#6E6EFD'
         this.baseClasses = [this.type]
         this.inputs = [
+            {
+                label: 'Mode',
+                name: 'humanInputMode',
+                type: 'options',
+                description: 'Approve pauses for proceed/reject. Input collects text. Output shows a result and waits for acknowledgement.',
+                options: [
+                    { label: 'Approve / 审批', name: 'approve', description: 'Proceed or reject' },
+                    { label: 'Input / 输入', name: 'input', description: 'Collect free-text input' },
+                    { label: 'Output / 输出', name: 'output', description: 'Show output and wait for acknowledgement' }
+                ],
+                default: 'approve'
+            },
             {
                 label: 'Description Type',
                 name: 'humanInputDescriptionType',
@@ -256,8 +268,15 @@ class HumanInput_Agentflow implements INode {
                 }
             }
 
-            const input = { messages: [...pastChatHistory, ...runtimeChatHistory], humanInputEnableFeedback }
-            const output = { content: humanInputDescription }
+            const configuredMode = nodeData.inputs?.humanInputMode
+            const humanInputMode = configuredMode === 'input' || configuredMode === 'output' ? configuredMode : 'approve'
+            const enableFeedback = humanInputMode === 'input' ? true : humanInputEnableFeedback
+            const input = {
+                messages: [...pastChatHistory, ...runtimeChatHistory],
+                humanInputEnableFeedback: enableFeedback,
+                humanInputMode
+            }
+            const output = { content: humanInputDescription, humanInputMode }
             const nodeOutput = {
                 id: nodeData.id,
                 name: this.name,

@@ -1,5 +1,7 @@
 import { GetSecretValueCommand, SecretsManagerClient, SecretsManagerClientConfig } from '@aws-sdk/client-secrets-manager'
 import { Sandbox } from '@e2b/code-interpreter'
+import { getE2BConnectionConfig, toE2BCreateOptions } from './sandbox/e2bConfig'
+import { getWorkflowSandboxContext } from './sandbox/workflowSandboxContext'
 import { DocumentLoader } from '@langchain/classic/document_loaders/base'
 import { Document } from '@langchain/core/documents'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
@@ -1603,7 +1605,13 @@ export const executeJavaScriptCode = async (
     } = {}
 ): Promise<any> => {
     const { timeout = 300000, useSandbox = true, streamOutput, libraries = [], nodeVMOptions = {} } = options
-    const shouldUseE2BSandbox = useSandbox && process.env.E2B_APIKEY
+    const workflowSandbox = getWorkflowSandboxContext()
+    if (workflowSandbox?.mode === 'unavailable') {
+        throw new Error(`Sandbox Execution Error: ${workflowSandbox.error || 'Workflow sandbox is unavailable'}`)
+    }
+    const sharedSandbox = workflowSandbox?.mode === 'ready' ? workflowSandbox.sandbox : undefined
+    // Ephemeral E2B stays gated on the legacy E2B_APIKEY flag. A per-workflow sandbox is used only when the run installed one.
+    const shouldUseE2BSandbox = Boolean(sharedSandbox) || (useSandbox && process.env.E2B_APIKEY)
 
     let timeoutMs = timeout
     if (process.env.SANDBOX_TIMEOUT) {
@@ -1665,7 +1673,17 @@ export const executeJavaScriptCode = async (
                 }
             }
 
-            const sbx = await Sandbox.create({ apiKey: process.env.E2B_APIKEY, timeoutMs })
+            const connection = getE2BConnectionConfig()
+            const createOptions = {
+                ...toE2BCreateOptions(connection),
+                apiKey: process.env.E2B_APIKEY || connection.apiKey,
+                timeoutMs
+            }
+            const sbx = sharedSandbox
+                ? sharedSandbox
+                : connection.template
+                ? await Sandbox.create(connection.template, createOptions)
+                : await Sandbox.create(createOptions)
 
             // Determine which libraries to install
             const librariesToInstall = new Set<string>(libraries)
@@ -1721,8 +1739,10 @@ export const executeJavaScriptCode = async (
                 streamOutput(output)
             }
 
-            // Clean up sandbox
-            sbx.kill()
+            // Ephemeral sandboxes are closed here. A per-workflow sandbox is kept alive across runs.
+            if (!sharedSandbox && typeof sbx.kill === 'function') {
+                await sbx.kill()
+            }
 
             return parseOutput(output)
         } catch (e) {

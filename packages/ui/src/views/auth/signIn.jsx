@@ -59,6 +59,7 @@ const SignInPage = () => {
     const [usernameVal, setUsernameVal] = useState('')
     const [passwordVal, setPasswordVal] = useState('')
     const [configuredSsoProviders, setConfiguredSsoProviders] = useState([])
+    const [casdoorEnabled, setCasdoorEnabled] = useState(false)
     const [authError, setAuthError] = useState(undefined)
     const [loading, setLoading] = useState(false)
     const [showResendButton, setShowResendButton] = useState(false)
@@ -98,6 +99,18 @@ const SignInPage = () => {
     useEffect(() => {
         store.dispatch(logoutSuccess())
         setAuthRateLimitError(null)
+        authApi
+            .getAuthConfig()
+            .then(async (response) => {
+                if (response.data?.authBypass) {
+                    const loggedIn = await authApi.authBypass()
+                    store.dispatch(loginSuccess(loggedIn.data))
+                    navigate(location.state?.path || '/')
+                    return
+                }
+                setCasdoorEnabled(Boolean(response.data?.casdoor))
+            })
+            .catch(() => setCasdoorEnabled(false))
         if (!isOpenSource) {
             getDefaultProvidersApi.request()
         }
@@ -257,7 +270,18 @@ const SignInPage = () => {
                             >
                                 Login
                             </LoadingButton>
-                            {configuredSsoProviders && configuredSsoProviders.length > 0 && <Divider sx={{ width: '100%' }}>OR</Divider>}
+                            {(casdoorEnabled || (configuredSsoProviders && configuredSsoProviders.length > 0)) && (
+                                <Divider sx={{ width: '100%' }}>OR</Divider>
+                            )}
+                            {casdoorEnabled && (
+                                <Button
+                                    variant='outlined'
+                                    style={{ borderRadius: 12, height: 45, marginRight: 5, lineHeight: 0 }}
+                                    onClick={() => signInWithSSO('casdoor')}
+                                >
+                                    使用 Casdoor 登录 / Sign in with Casdoor
+                                </Button>
+                            )}
                             {configuredSsoProviders &&
                                 configuredSsoProviders.map(
                                     (ssoProvider) =>
