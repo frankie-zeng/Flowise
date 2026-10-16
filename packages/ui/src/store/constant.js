@@ -15,7 +15,8 @@ import {
     IconWorld,
     IconRelationOneToManyFilled,
     IconVectorBezier2,
-    IconPlugConnected
+    IconPlugConnected,
+    IconTerminal2
 } from '@tabler/icons-react'
 
 export const gridSpacing = 3
@@ -118,6 +119,11 @@ export const AGENTFLOW_ICONS = [
         name: 'a2aAgentflow',
         icon: IconPlugConnected,
         color: '#FF8A65'
+    },
+    {
+        name: 'caoAgentflow',
+        icon: IconTerminal2,
+        color: '#FF9900'
     }
 ]
 

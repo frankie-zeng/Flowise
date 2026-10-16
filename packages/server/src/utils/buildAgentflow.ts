@@ -41,6 +41,8 @@ import {
 import { acquireWorkflowSandbox } from '../services/workflow-sandbox'
 import { persistNodeExecutionArtifacts } from '../services/execution-artifacts'
 import { createA2ASessionStore } from '../services/a2a-session'
+import { createCaoSessionStore } from '../services/cao-session'
+import { createConversationRecorder } from '../services/agent-conversation'
 import {
     RUNTIME_MESSAGES_LENGTH_VAR_PREFIX,
     CHAT_HISTORY_VAR_PREFIX,
@@ -1263,7 +1265,14 @@ const executeNode = async ({
             humanInputAction,
             iterationContext,
             evaluationRunId,
-            a2aSession: createA2ASessionStore(appDataSource, chatflow.id, sessionId)
+            a2aSession: createA2ASessionStore(appDataSource, chatflow.id, sessionId),
+            caoSession: createCaoSessionStore(appDataSource, chatflow.id, workspaceId),
+            conversation: createConversationRecorder(appDataSource, {
+                workspaceId,
+                chatflowId: chatflow.id,
+                sessionId,
+                executionId
+            })
         }
 
         // Execute node

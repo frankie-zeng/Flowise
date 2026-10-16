@@ -32,6 +32,8 @@ import { ScheduleTriggerLog } from './ScheduleTriggerLog'
 import { WorkflowSandbox } from './WorkflowSandbox'
 import { ExecutionArtifact } from './ExecutionArtifact'
 import { A2ASession } from './A2ASession'
+import { CaoSession } from './CaoSession'
+import { AgentConversationTurn } from './AgentConversationTurn'
 
 export const entities = {
     ChatFlow,
@@ -69,5 +71,7 @@ export const entities = {
     ScheduleTriggerLog,
     WorkflowSandbox,
     ExecutionArtifact,
-    A2ASession
+    A2ASession,
+    CaoSession,
+    AgentConversationTurn
 }

@@ -6,6 +6,8 @@ const getExecutionById = (executionId) => client.get(`/executions/${executionId}
 const getExecutionByIdPublic = (executionId) => client.get(`/public-executions/${executionId}`)
 const updateExecution = (executionId, body) => client.put(`/executions/${executionId}`, body)
 const getExecutionArtifact = (executionId, artifactId) => client.get(`/executions/${executionId}/artifacts/${artifactId}`)
+const getExecutionConversations = (executionId, nodeId) =>
+    client.get(`/executions/${executionId}/conversations`, { params: nodeId ? { nodeId } : {} })
 
 export default {
     getAllExecutions,
@@ -13,5 +15,6 @@ export default {
     getExecutionById,
     getExecutionByIdPublic,
     updateExecution,
-    getExecutionArtifact
+    getExecutionArtifact,
+    getExecutionConversations
 }

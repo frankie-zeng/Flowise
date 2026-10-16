@@ -39,6 +39,7 @@ import SourceDocDialog from '@/ui-component/dialog/SourceDocDialog'
 
 import predictionApi from '@/api/prediction'
 import executionsApi from '@/api/executions'
+import { ConversationTimeline } from '@/views/agentexecutions/ConversationTimeline'
 
 export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, onProceedSuccess }) => {
     const [dataView, setDataView] = useState('rendered')
@@ -1186,6 +1187,7 @@ export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, 
                             <JSONViewer data={data.state} />
                         </>
                     )}
+                    <ConversationTimeline data={data} metadata={metadata} isPublic={isPublic} />
                     {Array.isArray(data.artifacts) && data.artifacts.length > 0 && (
                         <>
                             <Typography sx={{ mt: 2 }} variant='h5' gutterBottom>

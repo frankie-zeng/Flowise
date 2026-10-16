@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes'
 import executionsService from '../../services/executions'
 import { ExecutionState } from '../../Interface'
 import { readExecutionArtifact } from '../../services/execution-artifacts'
+import { listConversationTurns } from '../../services/agent-conversation'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 
 const getExecutionById = async (req: Request, res: Response, next: NextFunction) => {
@@ -115,6 +116,23 @@ const deleteExecutions = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
+const getExecutionConversations = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const workspaceId = req.user?.activeWorkspaceId
+        const execution = await executionsService.getExecutionById(req.params.id, workspaceId)
+        if (!execution) return res.status(StatusCodes.NOT_FOUND).json({ message: 'Execution not found' })
+        const nodeId = typeof req.query.nodeId === 'string' ? req.query.nodeId : undefined
+        const turns = await listConversationTurns(getRunningExpressApp().AppDataSource, {
+            workspaceId,
+            chatflowId: execution.agentflowId,
+            nodeId
+        })
+        return res.json(turns)
+    } catch (error) {
+        next(error)
+    }
+}
+
 const getExecutionArtifact = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const artifact = await readExecutionArtifact(
@@ -136,5 +154,6 @@ export default {
     getExecutionById,
     getPublicExecutionById,
     getExecutionArtifact,
+    getExecutionConversations,
     updateExecution
 }

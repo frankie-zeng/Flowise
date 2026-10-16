@@ -49,6 +49,7 @@ import { AddMcpServerConfigToChatFlow1767000000000 } from './1767000000000-AddMc
 import { AddScheduleEntities1772000000000 } from './1772000000000-AddScheduleEntities'
 import { AddSSOIdentityBinding1780000000000 } from '../../../enterprise/database/migrations/mariadb/1780000000000-AddSSOIdentityBinding'
 import { AddAgentflowExtensions1781000000003 } from './1781000000003-AddAgentflowExtensions'
+import { AddCaoConversations1782000000003 } from './1782000000003-AddCaoConversations'
 
 import { AddAuthTables1720230151482 } from '../../../enterprise/database/migrations/mariadb/1720230151482-AddAuthTables'
 import { AddWorkspace1725437498242 } from '../../../enterprise/database/migrations/mariadb/1725437498242-AddWorkspace'
@@ -124,5 +125,6 @@ export const mariadbMigrations = [
     AddMcpServerConfigToChatFlow1767000000000,
     AddScheduleEntities1772000000000,
     AddSSOIdentityBinding1780000000000,
-    AddAgentflowExtensions1781000000003
+    AddAgentflowExtensions1781000000003,
+    AddCaoConversations1782000000003
 ]
