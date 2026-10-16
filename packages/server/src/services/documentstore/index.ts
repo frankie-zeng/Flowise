@@ -208,12 +208,13 @@ const getUsedChatflowNames = async (entity: DocumentStore, workspaceId: string) 
             for (let i = 0; i < whereUsed.length; i++) {
                 const associatedChatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
                     where: { id: whereUsed[i], workspaceId: workspaceId },
-                    select: ['id', 'name']
+                    select: ['id', 'name', 'type']
                 })
                 if (associatedChatflow) {
                     updatedWhereUsed.push({
                         id: whereUsed[i],
-                        name: associatedChatflow.name
+                        name: associatedChatflow.name,
+                        type: associatedChatflow.type
                     })
                 }
             }

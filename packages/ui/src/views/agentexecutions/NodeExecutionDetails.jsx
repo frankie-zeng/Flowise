@@ -38,6 +38,7 @@ import { CodeEditor } from '@/ui-component/editor/CodeEditor'
 import SourceDocDialog from '@/ui-component/dialog/SourceDocDialog'
 
 import predictionApi from '@/api/prediction'
+import executionsApi from '@/api/executions'
 
 export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, onProceedSuccess }) => {
     const [dataView, setDataView] = useState('rendered')
@@ -49,6 +50,8 @@ export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, 
     const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
     const [sourceDialogProps, setSourceDialogProps] = useState({})
     const [showAllTools, setShowAllTools] = useState(false)
+    const [artifactPreview, setArtifactPreview] = useState('')
+    const [artifactTitle, setArtifactTitle] = useState('')
     const customization = useSelector((state) => state.customization)
     const theme = useTheme()
     const { enqueueSnackbar } = useSnackbar()
@@ -135,6 +138,24 @@ export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, 
         } finally {
             setIsLoading(false)
             setLoadingMessage('')
+        }
+    }
+
+    const humanInputMode = data?.output?.humanInputMode || data?.input?.humanInputMode || 'approve'
+
+    const openArtifact = async (artifact) => {
+        if (isPublic || !metadata?.id || !artifact?.id) return
+        try {
+            const response = await executionsApi.getExecutionArtifact(metadata.id, artifact.id)
+            const body = response.data || {}
+            setArtifactTitle(`${body.kind || artifact.kind} · ${body.fileName || artifact.fileName}`)
+            if (body.encoding === 'base64' && String(body.mimeType || '').startsWith('image/')) {
+                setArtifactPreview(`data:${body.mimeType};base64,${body.content}`)
+            } else {
+                setArtifactPreview(body.content || '')
+            }
+        } catch (error) {
+            enqueueSnackbar(error?.response?.data?.message || '无法读取产物 / Failed to load artifact', { variant: 'error' })
         }
     }
 
@@ -1165,6 +1186,47 @@ export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, 
                             <JSONViewer data={data.state} />
                         </>
                     )}
+                    {Array.isArray(data.artifacts) && data.artifacts.length > 0 && (
+                        <>
+                            <Typography sx={{ mt: 2 }} variant='h5' gutterBottom>
+                                Artifacts / 产物
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {data.artifacts.map((artifact) => (
+                                    <Button key={artifact.id} size='small' variant='outlined' onClick={() => openArtifact(artifact)}>
+                                        {artifact.kind} · {artifact.fileName}
+                                    </Button>
+                                ))}
+                            </Box>
+                            {artifactPreview && (
+                                <Box
+                                    sx={{
+                                        mt: 1,
+                                        p: 1,
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        maxHeight: 360,
+                                        overflow: 'auto'
+                                    }}
+                                >
+                                    <Typography variant='caption'>{artifactTitle}</Typography>
+                                    {artifactPreview.startsWith('data:image/') ? (
+                                        <CardMedia
+                                            component='img'
+                                            image={artifactPreview}
+                                            alt={artifactTitle}
+                                            sx={{ mt: 1, maxHeight: 280 }}
+                                        />
+                                    ) : (
+                                        <Box component='pre' sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', m: 0 }}>
+                                            {artifactPreview}
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
+                        </>
+                    )}
                 </Box>
             )}
             {dataView === 'raw' && (
@@ -1205,9 +1267,17 @@ export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, 
                             zIndex: 1000
                         }}
                     >
-                        <Button variant='outlined' color='error' sx={{ borderRadius: '25px' }} onClick={handleReject} disabled={isLoading}>
-                            Reject
-                        </Button>
+                        {humanInputMode === 'approve' && (
+                            <Button
+                                variant='outlined'
+                                color='error'
+                                sx={{ borderRadius: '25px' }}
+                                onClick={handleReject}
+                                disabled={isLoading}
+                            >
+                                Reject
+                            </Button>
+                        )}
                         <Button
                             variant='contained'
                             color='primary'
@@ -1215,12 +1285,12 @@ export const NodeExecutionDetails = ({ data, label, status, metadata, isPublic, 
                             onClick={handleProceed}
                             disabled={isLoading}
                         >
-                            Proceed
+                            {humanInputMode === 'input' ? '提交 / Submit' : humanInputMode === 'output' ? '确认 / Acknowledge' : 'Proceed'}
                         </Button>
                     </Box>
 
                     <Dialog maxWidth='md' fullWidth open={openFeedbackDialog} onClose={() => !isLoading && setOpenFeedbackDialog(false)}>
-                        <DialogTitle variant='h5'>Provide Feedback</DialogTitle>
+                        <DialogTitle variant='h5'>{humanInputMode === 'input' ? '请输入 / Input' : 'Provide Feedback'}</DialogTitle>
                         <DialogContent>
                             <TextField
                                 //eslint-disable-next-line jsx-a11y/no-autofocus

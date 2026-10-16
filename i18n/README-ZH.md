@@ -109,6 +109,8 @@ Flowise 在一个单一的代码库中有 3 个不同的模块。
 
     现在可以在 [http://localhost:3000](http://localhost:3000) 访问应用
 
+    本 fork 的 Agentflow 沙箱、Casdoor 登录、执行产物与人工节点模式见 [Agentflow extensions](../docs/agentflow-extensions.md)。界面只保留 Agentflow V2：侧栏和路由中不再提供 Chatflow、Agentflow V1 和 Assistants，默认进入 Agentflows。本地不接 Casdoor 时，在 `packages/server/.env` 中设置 `AUTH_BYPASS=1`（不要提交该文件）。
+
 6. 用于开发构建：
 
     - 在 `packages/ui` 中创建 `.env` 文件并指定 `VITE_PORT`（参考 `.env.example`）

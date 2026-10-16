@@ -144,12 +144,49 @@ const CanvasHeader = ({ chatflow, isAgentCanvas, isAgentflowV2, handleSaveFlow, 
 
     const [exportAsTemplateDialogOpen, setExportAsTemplateDialogOpen] = useState(false)
     const [exportAsTemplateDialogProps, setExportAsTemplateDialogProps] = useState({})
+    const [sandboxAttached, setSandboxAttached] = useState(false)
+    const [releasingSandbox, setReleasingSandbox] = useState(false)
+
     const enqueueSnackbar = (...args) => dispatch(enqueueSnackbarAction(...args))
     const closeSnackbar = (...args) => dispatch(closeSnackbarAction(...args))
 
     const [savePermission, setSavePermission] = useState(isAgentCanvas ? 'agentflows:create' : 'chatflows:create')
 
     const title = isAgentCanvas ? 'Agents' : 'Chatflow'
+
+    useEffect(() => {
+        let cancelled = false
+        if (!chatflow?.id || !isAgentflowV2) return undefined
+        chatflowsApi
+            .getWorkflowSandbox(chatflow.id)
+            .then((response) => {
+                if (!cancelled) setSandboxAttached(Boolean(response.data?.attached))
+            })
+            .catch(() => {
+                if (!cancelled) setSandboxAttached(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [chatflow?.id, isAgentflowV2])
+
+    const releaseSandbox = async () => {
+        if (!chatflow?.id || releasingSandbox) return
+        const confirmed = window.confirm(
+            '释放此工作流的沙箱？沙箱内文件会丢失。\nRelease this workflow sandbox? Files inside it will be lost.'
+        )
+        if (!confirmed) return
+        setReleasingSandbox(true)
+        try {
+            await chatflowsApi.releaseWorkflowSandbox(chatflow.id)
+            setSandboxAttached(false)
+            enqueueSnackbar({ message: '沙箱已释放 / Sandbox released', variant: 'success' })
+        } catch (error) {
+            enqueueSnackbar({ message: error?.response?.data?.message || '释放沙箱失败 / Failed to release sandbox', variant: 'error' })
+        } finally {
+            setReleasingSandbox(false)
+        }
+    }
 
     const updateChatflowApi = useApi(chatflowsApi.updateChatflow)
     const getScheduleStatusApi = useApi(chatflowsApi.getScheduleStatus)
@@ -614,6 +651,27 @@ const CanvasHeader = ({ chatflow, isAgentCanvas, isAgentflowV2, handleSaveFlow, 
                             </Avatar>
                         </ButtonBase>
                     </Available>
+                    {chatflow?.id && isAgentflowV2 && (
+                        <Tooltip
+                            title={
+                                sandboxAttached
+                                    ? '释放沙箱 / Release sandbox'
+                                    : '尚无沙箱，会在首次运行时创建 / No sandbox yet. It is created on the first run.'
+                            }
+                        >
+                            <span>
+                                <Button
+                                    variant='outlined'
+                                    size='small'
+                                    sx={{ mr: 2, borderRadius: '20px' }}
+                                    disabled={!sandboxAttached || releasingSandbox}
+                                    onClick={releaseSandbox}
+                                >
+                                    释放沙箱
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    )}
                     <ButtonBase ref={settingsRef} title='Settings' sx={{ borderRadius: '50%' }}>
                         <Avatar
                             variant='rounded'

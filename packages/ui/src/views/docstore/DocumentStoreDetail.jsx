@@ -584,7 +584,7 @@ const DocumentStoreDetails = () => {
                             </StyledMenu>
                         </ViewHeader>
                         <DocumentStoreStatus status={documentStore?.status} />
-                        {getSpecificDocumentStore.data?.whereUsed?.length > 0 && (
+                        {(getSpecificDocumentStore.data?.whereUsed || []).filter((item) => item.type === 'AGENTFLOW').length > 0 && (
                             <Stack flexDirection='row' sx={{ gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                                 <div
                                     style={{
@@ -600,23 +600,25 @@ const DocumentStoreDetails = () => {
                                     }}
                                 >
                                     <IconVectorBezier2 style={{ marginRight: 5 }} size={17} />
-                                    Chatflows Used:
+                                    Agentflows Used:
                                 </div>
-                                {getSpecificDocumentStore.data.whereUsed.map((chatflowUsed, index) => (
-                                    <Chip
-                                        key={index}
-                                        clickable
-                                        style={{
-                                            width: 'max-content',
-                                            borderRadius: '25px',
-                                            boxShadow: customization.isDarkMode
-                                                ? '0 2px 14px 0 rgb(255 255 255 / 10%)'
-                                                : '0 2px 14px 0 rgb(32 40 45 / 10%)'
-                                        }}
-                                        label={chatflowUsed.name}
-                                        onClick={() => navigate('/canvas/' + chatflowUsed.id)}
-                                    ></Chip>
-                                ))}
+                                {getSpecificDocumentStore.data.whereUsed
+                                    .filter((chatflowUsed) => chatflowUsed.type === 'AGENTFLOW')
+                                    .map((chatflowUsed, index) => (
+                                        <Chip
+                                            key={index}
+                                            clickable
+                                            style={{
+                                                width: 'max-content',
+                                                borderRadius: '25px',
+                                                boxShadow: customization.isDarkMode
+                                                    ? '0 2px 14px 0 rgb(255 255 255 / 10%)'
+                                                    : '0 2px 14px 0 rgb(32 40 45 / 10%)'
+                                            }}
+                                            label={chatflowUsed.name}
+                                            onClick={() => navigate('/v2/agentcanvas/' + chatflowUsed.id)}
+                                        ></Chip>
+                                    ))}
                             </Stack>
                         )}
                         {!isLoading && documentStore && !documentStore?.loaders?.length ? (

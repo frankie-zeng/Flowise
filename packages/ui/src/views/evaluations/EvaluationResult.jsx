@@ -331,17 +331,10 @@ const EvalEvaluationRows = () => {
         if (outdated?.errors?.length > 0 && outdated.errors.find((e) => e.id === id)) {
             return undefined
         }
-        if (additionalConfig.chatflowTypes) {
-            switch (additionalConfig.chatflowTypes[index]) {
-                case 'Chatflow':
-                    return '/canvas/' + evaluation.chatflowId[index]
-                case 'Custom Assistant':
-                    return '/assistants/custom/' + evaluation.chatflowId[index]
-                case 'Agentflow v2':
-                    return '/v2/agentcanvas/' + evaluation.chatflowId[index]
-            }
+        if (additionalConfig.chatflowTypes && additionalConfig.chatflowTypes[index] === 'Agentflow v2') {
+            return '/v2/agentcanvas/' + evaluation.chatflowId[index]
         }
-        return '/canvas/' + evaluation.chatflowId[index]
+        return '/agentflows'
     }
 
     const openFlow = (index) => {
@@ -484,11 +477,9 @@ const EvalEvaluationRows = () => {
                                                         label={chatflow.chatflowName}
                                                         onClick={() =>
                                                             window.open(
-                                                                chatflow.chatflowType === 'Chatflow'
-                                                                    ? '/canvas/' + chatflow.chatflowId
-                                                                    : chatflow.chatflowType === 'Custom Assistant'
-                                                                    ? '/assistants/custom/' + chatflow.chatflowId
-                                                                    : '/v2/agentcanvas/' + chatflow.chatflowId,
+                                                                chatflow.chatflowType === 'Agentflow v2'
+                                                                    ? '/v2/agentcanvas/' + chatflow.chatflowId
+                                                                    : '/agentflows',
                                                                 '_blank'
                                                             )
                                                         }

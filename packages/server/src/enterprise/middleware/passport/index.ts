@@ -11,6 +11,7 @@ import { InternalFlowiseError } from '../../../errors/internalFlowiseError'
 import { IdentityManager } from '../../../IdentityManager'
 import { Platform } from '../../../Interface'
 import { getRunningExpressApp } from '../../../utils/getRunningExpressApp'
+import { isAuthBypassEnabled, isCasdoorEnabled } from '../../../services/identity/config'
 import { OrganizationUserStatus } from '../../database/entities/organization-user.entity'
 import { GeneralRole } from '../../database/entities/role.entity'
 import { WorkspaceUser, WorkspaceUserStatus } from '../../database/entities/workspace-user.entity'
@@ -211,6 +212,9 @@ export const initializeJwtCookieMiddleware = async (app: express.Application, id
         const registeredOrganizationCount = await orgService.countOrganizations(queryRunner)
         await queryRunner.release()
         if (registeredOrganizationCount === 0) {
+            if (isAuthBypassEnabled() || isCasdoorEnabled()) {
+                return res.status(HttpStatusCode.Ok).json({ redirectUrl: '/signin' })
+            }
             switch (platform) {
                 case Platform.ENTERPRISE:
                     if (!identityManager.isLicenseValid()) {

@@ -8,6 +8,8 @@ import { ChatflowType } from '../../Interface'
 import { ScheduleBeat } from '../../schedule/ScheduleBeat'
 import apiKeyService from '../../services/apikey'
 import chatflowsService from '../../services/chatflows'
+import { getWorkflowSandboxStatus, releaseWorkflowSandboxForChatflow } from '../../services/workflow-sandbox'
+import { isWorkflowSandboxEnabled } from 'flowise-components'
 import scheduleService from '../../services/schedule'
 import { GeneralErrorMessage } from '../../utils/constants'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
@@ -437,6 +439,32 @@ const toggleScheduleEnabled = async (req: Request, res: Response, next: NextFunc
     }
 }
 
+const getWorkflowSandbox = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.params.id) {
+            throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, 'Chatflow id is required')
+        }
+        await chatflowsService.getChatflowById(req.params.id, req.user?.activeWorkspaceId)
+        const status = await getWorkflowSandboxStatus(req.params.id)
+        return res.json({ enabled: isWorkflowSandboxEnabled(), ...status })
+    } catch (error) {
+        next(error)
+    }
+}
+
+const releaseWorkflowSandbox = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.params.id) {
+            throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, 'Chatflow id is required')
+        }
+        await chatflowsService.getChatflowById(req.params.id, req.user?.activeWorkspaceId)
+        const result = await releaseWorkflowSandboxForChatflow(req.params.id)
+        return res.json(result)
+    } catch (error) {
+        next(error)
+    }
+}
+
 export default {
     checkIfChatflowIsValidForStreaming,
     checkIfChatflowIsValidForUploads,
@@ -454,5 +482,7 @@ export default {
     getScheduleStatus,
     getScheduleTriggerLogs,
     deleteScheduleTriggerLogs,
-    toggleScheduleEnabled
+    toggleScheduleEnabled,
+    getWorkflowSandbox,
+    releaseWorkflowSandbox
 }

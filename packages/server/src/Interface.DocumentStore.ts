@@ -120,6 +120,7 @@ export interface IDocumentStoreLoaderFile {
 export interface IDocumentStoreWhereUsed {
     id: string
     name: string
+    type?: string
 }
 
 export interface IUpsertQueueAppServer {

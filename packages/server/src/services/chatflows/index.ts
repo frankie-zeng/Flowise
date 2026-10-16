@@ -18,6 +18,9 @@ import { getErrorMessage } from '../../errors/utils'
 import { ScheduleBeat } from '../../schedule/ScheduleBeat'
 import documentStoreService from '../../services/documentstore'
 import scheduleService from '../../services/schedule'
+import { releaseWorkflowSandboxForChatflow } from '../workflow-sandbox'
+import { A2ASession } from '../../database/entities/A2ASession'
+import { ExecutionArtifact } from '../../database/entities/ExecutionArtifact'
 import {
     constructGraphs,
     decryptCredentialData,
@@ -41,9 +44,19 @@ export const enum ChatflowErrorMessage {
     WORKSPACE_ID_REQUIRED = 'Workspace ID is required'
 }
 
+const removedFlowTypes = new Set<string>([EnumChatflowType.CHATFLOW, EnumChatflowType.MULTIAGENT])
+
 export function validateChatflowType(type: ChatflowType | undefined) {
     if (!Object.values(EnumChatflowType).includes(type as EnumChatflowType))
         throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, ChatflowErrorMessage.INVALID_CHATFLOW_TYPE)
+}
+
+/** Reject Chatflow builder and Agentflow V1 rows. Agentflow V2 (AGENTFLOW) and existing assistant rows stay valid. */
+export function assertCreatableChatflowType(type: ChatflowType | undefined) {
+    validateChatflowType(type)
+    if (removedFlowTypes.has(type as string)) {
+        throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, 'Chatflow and Agentflow V1 cannot be created. Use type AGENTFLOW.')
+    }
 }
 
 // Check if chatflow valid for streaming
@@ -152,6 +165,14 @@ const deleteChatflow = async (
             if (existingRecord) {
                 await ScheduleBeat.getInstance().onScheduleChanged(existingRecord.id, 'delete')
             }
+        }
+
+        try {
+            await releaseWorkflowSandboxForChatflow(chatflowId)
+            await appServer.AppDataSource.getRepository(A2ASession).delete({ chatflowId })
+            await appServer.AppDataSource.getRepository(ExecutionArtifact).delete({ agentflowId: chatflowId })
+        } catch (e) {
+            logger.error(`[server]: Error releasing workflow sandbox for chatflow ${chatflowId}: ${getErrorMessage(e)}`)
         }
 
         try {
@@ -351,7 +372,7 @@ const saveChatflow = async (
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
 ): Promise<any> => {
-    validateChatflowType(newChatFlow.type)
+    assertCreatableChatflowType(newChatFlow.type)
     const appServer = getRunningExpressApp()
 
     let dbResponse: ChatFlow
@@ -470,7 +491,7 @@ const updateChatflow = async (
         )
     }
     if (updateChatFlow.type || updateChatFlow.type === '') {
-        validateChatflowType(updateChatFlow.type)
+        assertCreatableChatflowType(updateChatFlow.type)
     } else {
         updateChatFlow.type = chatflow.type
     }

@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { Navigate } from 'react-router'
 
 // project imports
 import MainLayout from '@/layout/MainLayout'
@@ -6,9 +7,6 @@ import Loadable from '@/ui-component/loading/Loadable'
 
 import { DefaultRedirect } from '@/routes/DefaultRedirect'
 import { RequireAuth } from '@/routes/RequireAuth'
-
-// chatflows routing
-const Chatflows = Loadable(lazy(() => import('@/views/chatflows')))
 
 // agents routing
 const Agentflows = Loadable(lazy(() => import('@/views/agentflows')))
@@ -21,12 +19,6 @@ const APIKey = Loadable(lazy(() => import('@/views/apikey')))
 
 // tools routing
 const Tools = Loadable(lazy(() => import('@/views/tools')))
-
-// assistants routing
-const Assistants = Loadable(lazy(() => import('@/views/assistants')))
-const OpenAIAssistantLayout = Loadable(lazy(() => import('@/views/assistants/openai/OpenAIAssistantLayout')))
-const CustomAssistantLayout = Loadable(lazy(() => import('@/views/assistants/custom/CustomAssistantLayout')))
-const CustomAssistantConfigurePreview = Loadable(lazy(() => import('@/views/assistants/custom/CustomAssistantConfigurePreview')))
 
 // credentials routing
 const Credentials = Loadable(lazy(() => import('@/views/credentials')))
@@ -82,11 +74,7 @@ const MainRoutes = {
         },
         {
             path: '/chatflows',
-            element: (
-                <RequireAuth permission={'chatflows:view'}>
-                    <Chatflows />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/agentflows',
@@ -130,35 +118,19 @@ const MainRoutes = {
         },
         {
             path: '/assistants',
-            element: (
-                <RequireAuth permission={'assistants:view'}>
-                    <Assistants />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/assistants/custom',
-            element: (
-                <RequireAuth permission={'assistants:view'}>
-                    <CustomAssistantLayout />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/assistants/custom/:id',
-            element: (
-                <RequireAuth permission={'assistants:view'}>
-                    <CustomAssistantConfigurePreview />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/assistants/openai',
-            element: (
-                <RequireAuth permission={'assistants:view'}>
-                    <OpenAIAssistantLayout />
-                </RequireAuth>
-            )
+            element: <Navigate to='/agentflows' replace />
         },
         {
             path: '/credentials',
