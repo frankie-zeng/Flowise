@@ -3,10 +3,22 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useState, useEffect, useRef, useContext, memo } from 'react'
 import { useUpdateNodeInternals } from 'reactflow'
 import PropTypes from 'prop-types'
-import { Stack, Box, Typography, TextField, Dialog, DialogContent, ButtonBase, Avatar } from '@mui/material'
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Stack,
+    Box,
+    Typography,
+    TextField,
+    Dialog,
+    DialogContent,
+    ButtonBase,
+    Avatar
+} from '@mui/material'
 import NodeInputHandler from '@/views/canvas/NodeInputHandler'
 import { HIDE_CANVAS_DIALOG, SHOW_CANVAS_DIALOG } from '@/store/actions'
-import { IconPencil, IconX, IconCheck, IconInfoCircle } from '@tabler/icons-react'
+import { IconPencil, IconX, IconCheck, IconInfoCircle, IconChevronDown } from '@tabler/icons-react'
 import { useTheme } from '@mui/material/styles'
 import { flowContext } from '@/store/context/ReactFlowContext'
 import { applyVisibleInputDefaults, showHideInputParams } from '@/utils/genericHelper'
@@ -252,17 +264,38 @@ const EditNodeDialog = ({ show, dialogProps, onCancel }) => {
                     </Stack>
                 )}
                 {inputParams
-                    .filter((inputParam) => inputParam.display !== false)
+                    .filter((inputParam) => inputParam.display !== false && !inputParam.additionalParams)
                     .map((inputParam, index) => (
                         <NodeInputHandler
                             disabled={dialogProps.disabled}
                             key={index}
                             inputParam={inputParam}
                             data={data}
-                            isAdditionalParams={true}
+                            isAdditionalParams={false}
                             onCustomDataChange={onCustomDataChange}
                         />
                     ))}
+                {inputParams.some((inputParam) => inputParam.display !== false && inputParam.additionalParams) && (
+                    <Accordion disableGutters elevation={0} sx={{ mt: 1, '&:before': { display: 'none' } }}>
+                        <AccordionSummary expandIcon={<IconChevronDown size={18} />}>
+                            <Typography variant='subtitle2'>Additional Parameters</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            {inputParams
+                                .filter((inputParam) => inputParam.display !== false && inputParam.additionalParams)
+                                .map((inputParam, index) => (
+                                    <NodeInputHandler
+                                        disabled={dialogProps.disabled}
+                                        key={index}
+                                        inputParam={inputParam}
+                                        data={data}
+                                        isAdditionalParams={true}
+                                        onCustomDataChange={onCustomDataChange}
+                                    />
+                                ))}
+                        </AccordionDetails>
+                    </Accordion>
+                )}
             </DialogContent>
         </Dialog>
     ) : null

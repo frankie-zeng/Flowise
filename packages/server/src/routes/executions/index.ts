@@ -6,6 +6,7 @@ const router = express.Router()
 // READ
 router.get('/', checkAnyPermission('executions:view'), executionController.getAllExecutions)
 router.get('/:id/artifacts/:artifactId', checkAnyPermission('executions:view'), executionController.getExecutionArtifact)
+router.get('/:id/conversations', checkAnyPermission('executions:view'), executionController.getExecutionConversations)
 router.get(['/', '/:id'], checkAnyPermission('executions:view'), executionController.getExecutionById)
 
 // PUT

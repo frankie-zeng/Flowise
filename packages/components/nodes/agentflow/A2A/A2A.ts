@@ -91,13 +91,31 @@ class A2A_Agentflow implements INode {
             validateStatus: () => true
         })
         const parsedBody = response.data
+        const recordTurn = async (status: string, outputText: string, rawResponse: unknown, contextId?: string, taskId?: string) => {
+            if (!options.conversation?.append) return
+            await options.conversation.append({
+                nodeId,
+                kind: 'a2a',
+                status,
+                message,
+                output: outputText,
+                externalSession: contextId,
+                externalTask: taskId,
+                rawRequest: requestBody,
+                rawResponse
+            })
+        }
         if (response.status < 200 || response.status >= 300) {
             const error = new Error(`A2A request failed with HTTP ${response.status}`)
             ;(error as any).a2a = { request: requestBody, response: parsedBody }
+            await recordTurn('error', error.message, parsedBody, session.contextId, session.taskId)
             throw error
         }
         if (parsedBody?.error) {
-            throw new Error(`A2A agent error: ${parsedBody.error.message || JSON.stringify(parsedBody.error)}`)
+            const error = new Error(`A2A agent error: ${parsedBody.error.message || JSON.stringify(parsedBody.error)}`)
+            ;(error as any).a2a = { request: requestBody, response: parsedBody }
+            await recordTurn('error', error.message, parsedBody, session.contextId, session.taskId)
+            throw error
         }
 
         const parsed = parseA2AResponse(parsedBody)
@@ -109,14 +127,7 @@ class A2A_Agentflow implements INode {
             await options.a2aSession.save(nodeId, nextSession)
         }
         const nextState = { ...state, [stateKey]: nextSession }
-
-        const safeRequest = {
-            ...requestBody,
-            params: {
-                ...requestBody.params,
-                message: { ...requestBody.params.message }
-            }
-        }
+        await recordTurn('completed', parsed.text, parsed.raw, nextSession.contextId, nextSession.taskId)
 
         return {
             id: nodeData.id,
@@ -125,10 +136,14 @@ class A2A_Agentflow implements INode {
             output: {
                 content: parsed.text,
                 a2a: {
-                    request: safeRequest,
+                    request: requestBody,
                     response: parsed.raw,
                     contextId: nextSession.contextId,
-                    taskId: nextSession.taskId
+                    taskId: nextSession.taskId,
+                    turns: [
+                        { role: 'user', text: message },
+                        { role: 'agent', text: parsed.text }
+                    ]
                 }
             },
             state: nextState

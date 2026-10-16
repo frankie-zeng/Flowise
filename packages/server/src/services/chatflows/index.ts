@@ -20,6 +20,8 @@ import documentStoreService from '../../services/documentstore'
 import scheduleService from '../../services/schedule'
 import { releaseWorkflowSandboxForChatflow } from '../workflow-sandbox'
 import { A2ASession } from '../../database/entities/A2ASession'
+import { CaoSession } from '../../database/entities/CaoSession'
+import { AgentConversationTurn } from '../../database/entities/AgentConversationTurn'
 import { ExecutionArtifact } from '../../database/entities/ExecutionArtifact'
 import {
     constructGraphs,
@@ -170,6 +172,8 @@ const deleteChatflow = async (
         try {
             await releaseWorkflowSandboxForChatflow(chatflowId)
             await appServer.AppDataSource.getRepository(A2ASession).delete({ chatflowId })
+            await appServer.AppDataSource.getRepository(CaoSession).delete({ chatflowId })
+            await appServer.AppDataSource.getRepository(AgentConversationTurn).delete({ chatflowId })
             await appServer.AppDataSource.getRepository(ExecutionArtifact).delete({ agentflowId: chatflowId })
         } catch (e) {
             logger.error(`[server]: Error releasing workflow sandbox for chatflow ${chatflowId}: ${getErrorMessage(e)}`)

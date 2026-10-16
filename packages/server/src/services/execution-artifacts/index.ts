@@ -59,7 +59,9 @@ export const persistNodeExecutionArtifacts = async (params: {
         { kind: 'output', fileName: 'output.json', mimeType: 'application/json', body: safeJson(params.output) }
     ]
 
-    const output = params.output as { a2a?: { request?: unknown; response?: unknown }; files?: Array<any> } | undefined
+    const output = params.output as
+        | { a2a?: { request?: unknown; response?: unknown }; cao?: { request?: unknown; response?: unknown }; files?: Array<any> }
+        | undefined
     if (output?.a2a?.request) {
         files.push({ kind: 'a2a-request', fileName: 'a2a-request.json', mimeType: 'application/json', body: safeJson(output.a2a.request) })
     }
@@ -69,6 +71,17 @@ export const persistNodeExecutionArtifacts = async (params: {
             fileName: 'a2a-response.json',
             mimeType: 'application/json',
             body: safeJson(output.a2a.response)
+        })
+    }
+    if (output?.cao?.request) {
+        files.push({ kind: 'cao-request', fileName: 'cao-request.json', mimeType: 'application/json', body: safeJson(output.cao.request) })
+    }
+    if (output?.cao?.response) {
+        files.push({
+            kind: 'cao-response',
+            fileName: 'cao-response.json',
+            mimeType: 'application/json',
+            body: safeJson(output.cao.response)
         })
     }
     if (Array.isArray(output?.files)) {

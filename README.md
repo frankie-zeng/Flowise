@@ -126,7 +126,7 @@ Flowise has 3 different modules in a single mono repository.
     pnpm build
     ```
 
-    Fork-specific Agentflow sandbox, Casdoor login, artifacts, and human-input modes are documented in [Agentflow extensions](./docs/agentflow-extensions.md). The UI is Agentflow V2: Chatflows, Agentflow V1, and Assistants are not shown, and the home page is Agentflows. For local UI work without Casdoor, set `AUTH_BYPASS=1` in `packages/server/.env` and do not commit that file.
+    Fork-specific Agentflow sandbox, Casdoor login, artifacts, the CAO node, conversation history, and human-input modes are documented in [Agentflow extensions](./docs/agentflow-extensions.md). The UI is Agentflow V2: Chatflows, Agentflow V1, and Assistants are not shown, and the home page is Agentflows. For local UI work without Casdoor, set `AUTH_BYPASS=1` in `packages/server/.env` and do not commit that file.
 
     <details>
     <summary>Exit code 134 (JavaScript heap out of memory)</summary>  
